@@ -30,3 +30,13 @@ dependency-reduced-pom.xml
 *.idea
 
 README.html
+
+*.jar
+logs/
+.gradletasknamecache
+classes/
+/upload
+gradle/wrapper/gradle-wrapper.properties
+*.class
+*.log
+out/

@@ -1,0 +1,145 @@
+group 'com.demo.service'
+
+apply plugin: 'base'
+apply plugin: 'maven-publish'
+apply plugin: 'findbugs'
+
+version =  '0.1.0'
+
+ext {
+    springBootVersion = '1.5.2.RELEASE'
+    log4jBridgeVersion = '2.2'
+    log4jVersion = '2.11.1'
+    env = "development"
+}
+
+buildscript {
+
+    ext {
+        springBootVersion = '1.5.7.RELEASE'
+        springGradlePluginVersion = '1.0.2.RELEASE'
+    }
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+        classpath "io.spring.gradle:dependency-management-plugin:$springGradlePluginVersion"
+    }
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+
+    configurations.all {
+        // check for updates every build
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
+
+subprojects {
+    version = parent.version
+    group = parent.group
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    
+    if (!it.name.endsWith('contract')) {
+        apply plugin: 'idea'
+        apply plugin: 'java'
+        apply plugin: "jacoco"
+        apply plugin: "io.spring.dependency-management"
+
+        configurations {
+            all*.exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+            all*.exclude group: "org.slf4j", module: "slf4j-log4j12"
+            all*.exclude group: "org.slf4j", module: "slf4j-jdk14"
+            all*.exclude group: "log4j", module: "log4j"
+        }
+
+        sourceSets {
+            main {
+                resources {
+                    srcDirs = ["src/main/resources/base", "src/main/resources/$env"]
+                }
+            }
+            test {
+                resources {
+                    srcDirs = ["src/test/resources/base", "src/test/resources/$env"]
+                }
+            }
+        }
+
+        dependencies {
+
+            compile "org.springframework.boot:spring-boot-starter:$springBootVersion"
+            compile "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
+            compile "org.springframework.boot:spring-boot-starter-log4j2:$springBootVersion"
+
+            // JPA Data (We are going to use Repositories, Entities, Hibernate, etc...)
+            compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+            // Use MySQL Connector-J
+            compile 'mysql:mysql-connector-java'
+
+            compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
+            compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
+            compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVersion"
+
+            testCompile('org.springframework.boot:spring-boot-starter-test')
+        }
+
+        jacoco {
+            toolVersion = "0.7.9"
+            reportsDir = file("$buildDir/customJacocoReportDir")
+        }
+
+        test {
+            jacoco {
+                append = false
+                destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+                classDumpFile = file("$buildDir/jacoco/classpathdumps")
+            }
+        }
+
+        jacocoTestReport {
+            reports {
+                xml.enabled = false
+                csv.enabled = false
+                html.destination "${buildDir}/jacocoHtml"
+            }
+        }
+    }
+}
+
+project(":saturday-api") {
+
+    apply plugin: 'org.springframework.boot'
+    dependencies {
+        compile "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
+    }
+}
+

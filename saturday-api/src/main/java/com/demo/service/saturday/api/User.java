@@ -1,4 +1,4 @@
-package hello;
+package com.demo.service.saturday.api;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
